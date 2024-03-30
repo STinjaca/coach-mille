@@ -81,7 +81,7 @@ def grabaciones(canal_a_grabar, path_file, unique_id):
         manager.close()
 
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     # Verificamos que se proporcionen los argumentos esperados
     if len(sys.argv) != 3:
         print("Uso: python coach.py canal path_file unique_id")
