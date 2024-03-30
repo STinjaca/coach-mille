@@ -45,7 +45,7 @@ def detener_grabacion(manager, canal):
         agi.verbose(f"Error al detener la grabación en el canal {canal}: {e}")
 
 
-def main(canal_a_grabar, path_file, unique_id):
+def grabaciones(canal_a_grabar, path_file, unique_id):
     try:
         # Crear una instancia de Manager
         manager = asterisk.manager.Manager()
@@ -81,12 +81,14 @@ def main(canal_a_grabar, path_file, unique_id):
         # Cerrar la conexión con el servidor Asterisk
         manager.close()
 
-if __name__ == "__main__":
-    # Obtenemos los argumentos de la línea de comandos
+
+def main():
     canal_a_grabar = agi.env['agi_arg_1']
     path_file = agi.env['agi_arg_2']
     unique_id = agi.env['agi_arg_3']
+    threading.Thread(target=grabaciones, args=(canal_a_grabar, path_file, unique_id)).start()
+    return "enviado"
+
+if __name__ == "__main__":
+    main()
     
-    # Llamamos a la función principal
-    threading.Thread(target=main, args=(canal_a_grabar, path_file, unique_id)).start()
-    #main(canal_a_grabar, path_file, unique_id) 
