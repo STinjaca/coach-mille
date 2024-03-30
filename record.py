@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-import sys
+import threading
+import traceback
 import asterisk.manager
 from asterisk.agi import AGI
 import time
@@ -12,19 +13,17 @@ user = "telefonia"
 pwd = "telefonia"
 
 
-def iniciar_grabacion(manager, canal, path_file, unique_id, i):
+def iniciar_grabacion(manager:asterisk.manager.Manager, canal, path_file, unique_id, i):
     agi.verbose(f"Iniciando grabación en el canal {canal}")
     try:
-        action = "Monitor"
-        parameters = {
+        manager_msg = manager.send_action({
+            'Action' : "Monitor",
             'Channel': canal,
             'File': f'{path_file}/{unique_id}-{i}.wav',
             'Format': 'wav',
             'Mix': '1'
-        }
-        
-        response = manager.send_action(action, parameters)
-        if response.get('Response') == 'Success':
+        })
+        if manager_msg.response == 'Success':
             agi.verbose("Grabación iniciada correctamente.")
         else:
             agi.verbose("Error al iniciar la grabación")
@@ -34,14 +33,14 @@ def iniciar_grabacion(manager, canal, path_file, unique_id, i):
 def detener_grabacion(manager, canal):
     agi.verbose(f"Deteniendo grabación en el canal {canal}")
     try:
-        response = manager.action({
+        manager_msg = manager.send_action({
             'Action': 'StopMonitor',
             'Channel': canal
         })
-        if response.is_error():
-            agi.verbose("Error al detener la grabación:", response.get_error())
-        else:
+        if manager_msg.response == 'Success':
             agi.verbose("Grabación detenida correctamente.")
+        else:
+            agi.verbose("Error al detener la grabación")
     except asterisk.manager.ManagerException as e:
         agi.verbose(f"Error al detener la grabación en el canal {canal}: {e}")
 
@@ -77,7 +76,7 @@ def main(canal_a_grabar, path_file, unique_id):
     except asterisk.manager.ManagerException as e:
         agi.verbose(f"Error general en el servidor Asterisk: {e}")
     except Exception as e:
-        agi.verbose(f"Error general: {e}")
+        agi.verbose(f"Error general: {traceback.format_exc()}")
     finally:
         # Cerrar la conexión con el servidor Asterisk
         manager.close()
@@ -89,4 +88,5 @@ if __name__ == "__main__":
     unique_id = agi.env['agi_arg_3']
     
     # Llamamos a la función principal
-    main(canal_a_grabar, path_file, unique_id) 
+    threading.Thread(target=main, args=(canal_a_grabar, path_file, unique_id)).start()
+    #main(canal_a_grabar, path_file, unique_id) 
