@@ -26,7 +26,7 @@ def iniciar_grabacion(manager:asterisk.manager.Manager, canal, path_file, unique
         if manager_msg.response == 'Success':
             agi.verbose("Grabación iniciada correctamente.")
         else:
-            agi.verbose("Error al iniciar la grabación")
+            agi.verbose(f"Error al iniciar la grabación: {manager_msg.response}")
     except asterisk.manager.ManagerException as e:
         agi.verbose(f"Error al iniciar la grabación en el canal {canal}: {e}")
 
@@ -40,7 +40,7 @@ def detener_grabacion(manager, canal):
         if manager_msg.response == 'Success':
             agi.verbose("Grabación detenida correctamente.")
         else:
-            agi.verbose("Error al detener la grabación")
+            agi.verbose(f"Error al detener la grabación: {manager_msg.response}")
     except asterisk.manager.ManagerException as e:
         agi.verbose(f"Error al detener la grabación en el canal {canal}: {e}")
 
