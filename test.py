@@ -1,8 +1,4 @@
-
-import traceback
-
-
-try:
-    print(0/0)
-except Exception as e:
-    print(f"{traceback.format_exc()}")
+import time
+while True:
+    time.sleep(10)
+    break

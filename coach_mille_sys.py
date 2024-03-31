@@ -12,7 +12,11 @@ user = "telefonia"
 pwd = "telefonia"
 
 
-def iniciar_grabacion(manager:asterisk.manager.Manager, canal, path_file, unique_id, i):
+def iniciar_grabacion(canal, path_file, unique_id, i):
+    manager = asterisk.manager.Manager()
+    # Conectar al servidor Asterisk
+    manager.connect(server)
+    manager.login(user, pwd)
     print(f"Iniciando grabación en el canal {canal}")
     try:
         manager_msg = manager.send_action({
@@ -22,47 +26,47 @@ def iniciar_grabacion(manager:asterisk.manager.Manager, canal, path_file, unique
             'Format': 'wav',
             'Mix': '1'
         })
-        if manager_msg.response == 'Success':
+        if manager_msg.response in 'Success':
             print("Grabación iniciada correctamente.")
         else:
             print(f"Error al iniciar la grabación: {manager_msg.response}")
     except asterisk.manager.ManagerException as e:
         print(f"Error al iniciar la grabación en el canal {canal}: {e}")
+    manager.close()
 
-def detener_grabacion(manager, canal):
+def detener_grabacion(canal):
+    manager = asterisk.manager.Manager()
+    # Conectar al servidor Asterisk
+    manager.connect(server)
+    manager.login(user, pwd)
     print(f"Deteniendo grabación en el canal {canal}")
     try:
         manager_msg = manager.send_action({
             'Action': 'StopMonitor',
             'Channel': canal
         })
-        if manager_msg.response == 'Success':
+        if manager_msg.response in 'Success':
             print("Grabación detenida correctamente.")
         else:
             print(f"Error al detener la grabación: {manager_msg.response}")
     except asterisk.manager.ManagerException as e:
         print(f"Error al detener la grabación en el canal {canal}: {e}")
+    
+    manager.close()
 
 
 def grabaciones(canal_a_grabar, path_file, unique_id):
     try:
-        # Crear una instancia de Manager
-        manager = asterisk.manager.Manager()
-
-        # Conectar al servidor Asterisk
-        manager.connect(server)
-        manager.login(user, pwd)
-
         i = 0
         continuar = 0
         # Bucle para iniciar grabaciones cada 5 segundos
         while continuar < 10:
             # Obtener el nombre del canal a grabar desde la variable CHANNEL_TO_RECORD            
             if canal_a_grabar:
-                iniciar_grabacion(manager, canal_a_grabar, path_file, unique_id, i)
+                iniciar_grabacion(canal_a_grabar, path_file, unique_id, i)
                 i+=1
                 time.sleep(5)  # Esperar 5 segundos antes de detener la grabación
-                detener_grabacion(manager, canal_a_grabar)
+                detener_grabacion(canal_a_grabar)
             else:
                 print("No se especificó ningún canal para grabar.")
                 time.sleep(5)
@@ -76,14 +80,11 @@ def grabaciones(canal_a_grabar, path_file, unique_id):
         print(f"Error general en el servidor Asterisk: {e}")
     except Exception as e:
         print(f"Error general: {traceback.format_exc()}")
-    finally:
-        # Cerrar la conexión con el servidor Asterisk
-        manager.close()
 
 
 if __name__ == "__main__":
     # Verificamos que se proporcionen los argumentos esperados
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         print("Uso: python coach.py canal path_file unique_id")
         sys.exit(1)
     
@@ -93,5 +94,4 @@ if __name__ == "__main__":
     unique_id = sys.argv[3]
     
     # Llamamos a la función principal
-    grabaciones(canal_a_grabar, path_file, unique_id)
-    
+    threading.Thread(target=grabaciones, args=(canal_a_grabar, path_file, unique_id)).start()    
