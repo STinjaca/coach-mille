@@ -4,7 +4,7 @@ import os
 import sys
 import threading
 import traceback
-import asterisk.manager
+from asterisk.manager import Manager, Event, ManagerSocketException, ManagerAuthException, ManagerException
 from asterisk.agi import AGI
 import time
 
@@ -23,11 +23,10 @@ url_end = "end_session" #Endpoint terminar grabacion
 #Tiempo de grabacion
 seg_grabacion = 5
 
-
 #Nombre de la variable de respuesta
 variable = "coach_mensaje"
 
-def iniciar_grabacion(manager:asterisk.manager.Manager, canal, path_file, unique_id, i):
+def iniciar_grabacion(manager:Manager, canal, path_file, unique_id, i):
     print(f"Iniciando grabación en el canal {canal}")
     try:       
         manager_msg = manager.send_action({
@@ -43,7 +42,7 @@ def iniciar_grabacion(manager:asterisk.manager.Manager, canal, path_file, unique
             print("Grabación iniciada correctamente.")
         else:
             print(f"Error al iniciar la grabación: {manager_msg.response}")
-    except asterisk.manager.ManagerException as e:
+    except ManagerException as e:
         print(f"Error al iniciar la grabación en el canal {canal}: {e}")
 
 def detener_grabacion(manager, canal):
@@ -58,7 +57,7 @@ def detener_grabacion(manager, canal):
             print("Grabación detenida correctamente.")
         else:
             print(f"Error al detener la grabación: {manager_msg.response}")
-    except asterisk.manager.ManagerException as e:
+    except ManagerException as e:
         print(f"Error al detener la grabación en el canal {canal}: {e}")
 
 def enviar_grabacion(manager, canal_a_grabar, path_file, unique_id, i):
@@ -122,18 +121,11 @@ def set_var(manager, canal, value):
                 print("Variable establecidad correctamente")
         else:
             print(f"Error al establecer la variable: {manager_msg.response}")
-    except asterisk.manager.ManagerException as e:
+    except ManagerException as e:
         print(f"Error al establecer la variable en el canal {canal}: {e}")
 
-def grabaciones(canal_a_grabar, path_file, unique_id):
-    try:
-        # Crear una instancia de Manager
-        manager = asterisk.manager.Manager()
-
-        # Conectar al servidor Asterisk
-        manager.connect(server)
-        manager.login(user, pwd)
-
+def grabaciones(manager, canal_a_grabar, path_file, unique_id):
+    try: 
         i = 0
         # Bucle para iniciar grabaciones cada 5 segundos
         print(manager.status(canal_a_grabar).response[0])
@@ -141,15 +133,10 @@ def grabaciones(canal_a_grabar, path_file, unique_id):
             iniciar_grabacion(manager, canal_a_grabar, path_file, unique_id, i)
             time.sleep(seg_grabacion)  # Esperar $seg_grabacion segundos antes de detener la grabación
             detener_grabacion(manager, canal_a_grabar)
-            enviar_grabacion(manager, canal_a_grabar, path_file, unique_id, i)
             i+=1
+            threading.Thread(target=enviar_grabacion, args=(manager, canal_a_grabar, path_file, unique_id, i)).start()
         detener_envio_grabacion(unique_id)
- 
-    except asterisk.manager.ManagerSocketException as e:
-        print(f"Error conectando al servidor Asterisk: {e}")
-    except asterisk.manager.ManagerAuthException as e:
-        print(f"Error de autenticación en el servidor Asterisk: {e}")
-    except asterisk.manager.ManagerException as e:
+    except ManagerException as e:
         print(f"Error general en el servidor Asterisk: {e}")
     except Exception as e:
         print(f"Error general: {traceback.format_exc()}")
@@ -157,6 +144,30 @@ def grabaciones(canal_a_grabar, path_file, unique_id):
         # Cerrar la conexión con el servidor Asterisk
         manager.close()
 
+def main(canal_a_grabar, path_file, unique_id):
+    try:
+        # Crear una instancia de Manager
+        manager = Manager()
+
+        # Conectar al servidor Asterisk
+        manager.connect(server)
+        manager.login(user, pwd)
+         
+        # Registrar un manejador de eventos para el evento AgentConnect
+        manager.register_event('AgentConnect', lambda m=manager, canal=canal_a_grabar, path=path_file, uid=unique_id: grabaciones(m, canal, path, uid))
+        
+        # Iniciar la escucha de eventos
+        manager.event_dispatch()
+        
+    except ManagerSocketException as e:
+        print(f"Error conectando al servidor Asterisk: {e}")
+    except ManagerAuthException as e:
+        print(f"Error de autenticación en el servidor Asterisk: {e}")
+    except ManagerException as e:
+        print(f"Error general en el servidor Asterisk: {e}")
+    except Exception as e:
+        print(f"Error general: {traceback.format_exc()}")
+    
 
 if __name__ == "__main__":
     # Verificamos que se proporcionen los argumentos esperados
@@ -169,5 +180,6 @@ if __name__ == "__main__":
     path_file = sys.argv[2]
     unique_id = sys.argv[3]
     
-    # Llamamos a la función principal
-    grabaciones(canal_a_grabar, path_file, unique_id)
+    main(canal_a_grabar, path_file, unique_id)
+    
+   
