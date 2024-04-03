@@ -1,4 +1,5 @@
-import time
-while True:
-    time.sleep(10)
-    break
+a = {"a":"a",
+     "b":"b"}
+
+for k,v in a.items():
+    print(k,v)
