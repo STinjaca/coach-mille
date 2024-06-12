@@ -1,0 +1,26 @@
+2024-06-12 00:05:24,613 - ERROR - Error conectando al servidor Asterisk: (10061, 'No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión')
+2024-06-12 00:05:28,396 - CRITICAL - Unhandled exception
+Traceback (most recent call last):
+  File "C:\Users\santi\AppData\Local\Programs\Python\Python312\Lib\site-packages\asterisk\manager.py", line 473, in connect
+    _sock.connect((host, port))
+ConnectionRefusedError: [WinError 10061] No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "c:\Users\santi\OneDrive\Documentos\ARI\coach_mille_4.py", line 275, in conectar_manager
+    manager.connect(server)
+  File "C:\Users\santi\AppData\Local\Programs\Python\Python312\Lib\site-packages\asterisk\manager.py", line 480, in connect
+    raise ManagerSocketException(e.errno, e.strerror)
+asterisk.manager.ManagerSocketException: (10061, 'No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión')
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "c:\Users\santi\OneDrive\Documentos\ARI\coach_mille_4.py", line 284, in <module>
+    manager = conectar_manager()
+              ^^^^^^^^^^^^^^^^^^
+  File "c:\Users\santi\OneDrive\Documentos\ARI\coach_mille_4.py", line 281, in conectar_manager
+    time.sleep(5)  # Espera 5 segundos antes de intentar reconectar
+    ^^^^^^^^^^^^^
+KeyboardInterrupt

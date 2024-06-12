@@ -1,5 +1,7 @@
-{"hola":{
-    "dos":2,
-    "tres":3,
-    "cuadro":4
-}}
+{
+    "hola": {
+        "dos": 2,
+        "tres": 3,
+        "cuadro": 4
+    }
+}
